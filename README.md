@@ -2,6 +2,8 @@
 
 A gym log that stays on your phone.
 
+**[Download the Android APK](https://github.com/kruxarth/TrackFit/releases/tag/v.0.0.1)** from the v0.0.1 release. Sideload the `.apk` — it is not on the Play Store.
+
 Most workout apps want an account, a feed, an AI coach, and a reason to open the store. TrackFit is the opposite: you create days (Pull, Push, whatever you actually train), log weight and reps, rest between sets, and look back at what you lifted.
 
 **No account. No cloud. No ads. No AI telling you what to do.** Your workouts never leave the device unless you export them.
@@ -47,7 +49,7 @@ Most workout apps want an account, a feed, an AI coach, and a reason to open the
 
 ## Install
 
-Android: the `.apk` from this repo’s **[Releases](https://github.com/kruxarth/fitTrack/releases)**. That is a sideload, not the Play Store.
+Android: the `.apk` on **[v0.0.1](https://github.com/kruxarth/TrackFit/releases/tag/v.0.0.1)**. That is a sideload, not the Play Store.
 
 iPhone cannot install an APK. An App Store / TestFlight build is a separate release.
 
