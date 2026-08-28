@@ -1,25 +1,53 @@
 {
   "expo": {
-    "name": "gym-app",
-    "slug": "gym-app",
-    "version": "1.0.0",
+    "name": "TrackFit",
+    "slug": "trackfit",
+    "version": "0.0.1",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/b4a5e225-cc0b-4a71-821c-5c4a2f5afead",
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
+    },
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "icon": "./assets/fitractlogo.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/fitractlogo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0E1113"
+    },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSMotionUsageDescription": "TrackFit uses motion data to count your steps throughout the day."
+      }
     },
     "android": {
+      "package": "com.trackfit.app",
+      "versionCode": 1,
+      "permissions": [
+        "android.permission.ACTIVITY_RECOGNITION"
+      ],
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "backgroundColor": "#0E1113",
+        "foregroundImage": "./assets/fitractlogo.png"
       },
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/fitractlogo.png"
+    },
+    "plugins": [
+      "expo-sqlite",
+      "expo-sharing"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "b4a5e225-cc0b-4a71-821c-5c4a2f5afead"
+      }
     }
   }
 }
