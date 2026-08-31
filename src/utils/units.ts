@@ -24,3 +24,12 @@ export function formatWeight(weightKg: number, unit: Unit): string {
 export function weightStep(unit: Unit): number {
   return unit === "kg" ? 2.5 : 5;
 }
+
+export function toggleUnit(unit: Unit): Unit {
+  return unit === "kg" ? "lbs" : "kg";
+}
+
+/** Prefer a stored per-exercise unit; otherwise fall back to the global setting. */
+export function resolveExerciseUnit(stored: string | null | undefined, fallback: Unit): Unit {
+  return stored === "kg" || stored === "lbs" ? stored : fallback;
+}

@@ -129,7 +129,7 @@ export function DayEditorScreen() {
   };
 
   return (
-    <Screen>
+    <Screen scrollToEndKey={editingNew}>
       <View style={{ gap: 8 }}>
         <Text style={{ color: theme.colors.textPrimary, fontSize: theme.typography.caption.fontSize } as TextStyle}>Day name</Text>
         <TextInput

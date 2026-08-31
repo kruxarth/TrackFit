@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect } from "react";
-import { View, Text, TextInput, Pressable, StyleSheet, TextStyle, Alert } from "react-native";
+import { View, Text, TextInput, Pressable, StyleSheet, TextStyle } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import { LineChart, BarChart } from "react-native-gifted-charts";
+import { LineChart } from "react-native-gifted-charts";
 import { Screen } from "../../components/Screen";
 import { SegmentedControl } from "../../components/SegmentedControl";
 import { Card } from "../../components/Card";
@@ -14,10 +14,8 @@ import { kgToDisplay, displayToKg, formatWeight, weightStep } from "../../utils/
 import { CHART_RANGES, rangeToSince, todayLocalISO, toLocalISO, type ChartRange } from "../../utils/dates";
 import * as workoutsRepo from "../../repos/workoutsRepo";
 import * as metricsRepo from "../../repos/metricsRepo";
-import * as stepsRepo from "../../repos/stepsRepo";
-import * as pedometer from "../../services/pedometer";
 
-type Segment = "Exercises" | "Body" | "Steps";
+type Segment = "Exercises" | "Body";
 
 function bmiCategory(bmi: number): string {
   if (bmi < 18.5) return "Underweight";
@@ -31,8 +29,6 @@ export function ProgressScreen() {
   const unit = useSettingsStore((s) => s.unit);
   const heightCm = useSettingsStore((s) => s.heightCm);
   const setHeightCm = useSettingsStore((s) => s.setHeightCm);
-  const stepsEnabled = useSettingsStore((s) => s.stepsEnabled);
-  const setStepsEnabled = useSettingsStore((s) => s.setStepsEnabled);
   const [segment, setSegment] = useState<Segment>("Exercises");
   const [range, setRange] = useState<ChartRange>("All");
   const [bodyRange, setBodyRange] = useState<ChartRange>("All");
@@ -47,11 +43,6 @@ export function ProgressScreen() {
   const [logWeightDisplay, setLogWeightDisplay] = useState<number | null>(null);
   const [showHeightInput, setShowHeightInput] = useState(false);
   const [heightInput, setHeightInput] = useState<string>(heightCm ? String(heightCm) : "");
-  // Steps state
-  const [todaySteps, setTodaySteps] = useState(0);
-  const [last7Steps, setLast7Steps] = useState<stepsRepo.DailyStepsRow[]>([]);
-  const [stepsError, setStepsError] = useState<string | null>(null);
-  const [stepsNeedsSettings, setStepsNeedsSettings] = useState(false);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -103,40 +94,6 @@ export function ProgressScreen() {
     }
   }, [segment, loadBodyMetrics]);
 
-  const loadSteps = useCallback(async () => {
-    const today = await stepsRepo.getTodaySteps();
-    setTodaySteps(today);
-    const last7 = await stepsRepo.getStepsForLast7Days();
-    // Fill missing days with 0 for last 7 dates
-    const filled: stepsRepo.DailyStepsRow[] = [];
-    const now = new Date();
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date(now);
-      d.setDate(now.getDate() - i);
-      const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-      const existing = last7.find((r) => r.date === iso);
-      filled.push({ date: iso, steps: existing?.steps ?? 0 });
-    }
-    setLast7Steps(filled);
-  }, []);
-
-  useFocusEffect(
-    useCallback(() => {
-      if (segment === "Steps") void loadSteps();
-    }, [segment, loadSteps])
-  );
-
-  useEffect(() => {
-    if (segment === "Steps" && stepsEnabled) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      void loadSteps();
-      const id = setInterval(() => {
-        void loadSteps();
-      }, 2000);
-      return () => clearInterval(id);
-    }
-  }, [segment, stepsEnabled, loadSteps]);
-
   // Also reload when unit changes? No, series data stays kg, display converts, so no need to refetch.
 
   const query = filter.trim().toLowerCase();
@@ -171,28 +128,6 @@ export function ProgressScreen() {
   const latestWeight = bodyMetrics.length > 0 ? bodyMetrics[bodyMetrics.length - 1] : null;
   const bmi = latestWeight && heightCm ? latestWeight.weight_kg / ((heightCm / 100) * (heightCm / 100)) : null;
   const bmiRounded = bmi !== null ? Math.round(bmi * 10) / 10 : null;
-
-  const handleEnableSteps = async () => {
-    setStepsError(null);
-    const result = await pedometer.enableSteps();
-    if (result.granted) {
-      await setStepsEnabled(true);
-      setStepsNeedsSettings(false);
-      await loadSteps();
-    } else {
-      await setStepsEnabled(false);
-      setStepsError(result.message ?? "Permission denied");
-      setStepsNeedsSettings(!!result.needsSettings);
-      if (result.needsSettings) {
-        Alert.alert("Need phone settings", result.message ?? "Permission denied", [
-          { text: "Not now", style: "cancel" },
-          { text: "Open settings", onPress: () => pedometer.openSystemSettings() },
-        ]);
-      } else {
-        Alert.alert("Step tracking", result.message ?? "Permission denied");
-      }
-    }
-  };
 
   const renderExercises = () => {
     if (exerciseNames.length === 0) {
@@ -449,67 +384,12 @@ export function ProgressScreen() {
     );
   };
 
-  const renderSteps = () => {
-    if (!stepsEnabled) {
-      return (
-        <View style={{ gap: 12 }}>
-          <EmptyState icon="footsteps-outline" heading="Step tracking is off" caption="Enable step tracking to count steps throughout the day, including while the app is in the background." buttonTitle="Enable step tracking" onButtonPress={handleEnableSteps} />
-          {stepsError ? (
-            <View style={{ gap: 8 }}>
-              <Text style={{ color: theme.colors.danger, fontSize: 13, textAlign: "center" } as TextStyle}>{stepsError}</Text>
-              {stepsNeedsSettings ? <Button title="Open system settings" variant="secondary" onPress={() => pedometer.openSystemSettings()} /> : null}
-            </View>
-          ) : null}
-        </View>
-      );
-    }
-
-    const barData = last7Steps.map((r) => ({
-      value: r.steps,
-      label: r.date.slice(5),
-      frontColor: theme.colors.accent,
-    }));
-
-    return (
-      <View style={{ gap: 16 }}>
-        <Card style={{ alignItems: "center", gap: 8 }}>
-          <Text style={{ color: theme.colors.textSecondary, fontSize: 12 } as TextStyle}>Today</Text>
-          <Text style={{ color: theme.colors.textPrimary, fontSize: 36, fontWeight: "700", fontVariant: ["tabular-nums"] as TextStyle["fontVariant"] } as TextStyle}>{todaySteps}</Text>
-          <Text style={{ color: theme.colors.textSecondary, fontSize: 13 } as TextStyle}>steps</Text>
-        </Card>
-
-        <Card>
-          <Text style={{ color: theme.colors.textPrimary, fontWeight: "600", marginBottom: 8 } as TextStyle}>Last 7 days</Text>
-          <View style={{ overflow: "hidden" }}>
-            <BarChart
-              data={barData}
-              width={280}
-              height={160}
-              barWidth={18}
-              barBorderRadius={4}
-              yAxisColor={theme.colors.border}
-              xAxisColor={theme.colors.border}
-              yAxisTextStyle={{ color: theme.colors.textSecondary, fontSize: 10 } as TextStyle}
-              xAxisLabelTextStyle={{ color: theme.colors.textSecondary, fontSize: 10 } as TextStyle}
-              noOfSections={4}
-              yAxisThickness={1}
-              xAxisThickness={1}
-            />
-          </View>
-        </Card>
-
-        <Text style={{ color: theme.colors.textSecondary, fontSize: 12, textAlign: "center" } as TextStyle}>Your phone counts steps all day. TrackFit syncs them when the app is open, including steps taken while you were away.</Text>
-      </View>
-    );
-  };
-
   return (
     <Screen>
-      <SegmentedControl options={["Exercises", "Body", "Steps"] as const} value={segment} onChange={setSegment as (v: Segment) => void} />
+      <SegmentedControl options={["Exercises", "Body"] as const} value={segment} onChange={setSegment} />
 
       {segment === "Exercises" ? renderExercises() : null}
       {segment === "Body" ? renderBody() : null}
-      {segment === "Steps" ? renderSteps() : null}
     </Screen>
   );
 }

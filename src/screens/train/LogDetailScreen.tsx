@@ -9,7 +9,7 @@ import { Button } from "../../components/Button";
 import { SetRow } from "../../components/SetRow";
 import { useTheme } from "../../theme/ThemeContext";
 import { useSettingsStore } from "../../stores/settingsStore";
-import { kgToDisplay, displayToKg, weightStep } from "../../utils/units";
+import { kgToDisplay, displayToKg, weightStep, toggleUnit, resolveExerciseUnit, type Unit } from "../../utils/units";
 import { getDatabase } from "../../db/database";
 import type { TrainStackParamList } from "../../navigation/RootNavigator";
 import type { LoggedExerciseRow, LoggedSetRow } from "../../repos/workoutsRepo";
@@ -22,7 +22,7 @@ export function LogDetailScreen() {
   const route = useRoute<Route>();
   const navigation = useNavigation<Nav>();
   const { logId } = route.params;
-  const unit = useSettingsStore((s) => s.unit);
+  const fallbackUnit = useSettingsStore((s) => s.unit);
 
   const [log, setLog] = useState<{ day_name_snapshot: string; started_at: number } | null>(null);
   const [exercises, setExercises] = useState<{ exercise: LoggedExerciseRow; sets: LoggedSetRow[] }[]>([]);
@@ -64,7 +64,7 @@ export function LogDetailScreen() {
     await db.runAsync("UPDATE logged_exercises SET notes = ? WHERE id = ?", [notes || null, exerciseId]);
   };
 
-  const handleWeightChange = async (setId: number, displayVal: number | null) => {
+  const handleWeightChange = async (setId: number, displayVal: number | null, unit: Unit) => {
     const kg = displayVal === null ? null : displayToKg(displayVal, unit);
     const db = await getDatabase();
     await db.runAsync("UPDATE logged_sets SET weight_kg = ? WHERE id = ?", [kg, setId]);
@@ -78,7 +78,7 @@ export function LogDetailScreen() {
     await load();
   };
 
-  const handleWeightStepper = async (set: LoggedSetRow, deltaDisplay: number) => {
+  const handleWeightStepper = async (set: LoggedSetRow, deltaDisplay: number, unit: Unit) => {
     const currentDisplay = set.weight_kg === null ? 0 : kgToDisplay(set.weight_kg, unit);
     const nextDisplay = Math.max(0, currentDisplay + deltaDisplay);
     const kg = displayToKg(nextDisplay, unit);
@@ -118,7 +118,18 @@ export function LogDetailScreen() {
     const db = await getDatabase();
     const maxRow = await db.getFirstAsync<{ maxPos: number | null }>("SELECT MAX(position) as maxPos FROM logged_exercises WHERE workout_log_id = ?", [logId]);
     const nextPos = (maxRow?.maxPos ?? -1) + 1;
-    const res = await db.runAsync("INSERT INTO logged_exercises (workout_log_id, name, is_bodyweight, position) VALUES (?, ?, ?, ?)", [logId, name, newExerciseBW ? 1 : 0, nextPos]);
+    const prev = await db.getFirstAsync<{ weight_unit: string | null }>(
+      `SELECT le.weight_unit FROM logged_exercises le
+       JOIN workout_logs wl ON le.workout_log_id = wl.id
+       WHERE LOWER(TRIM(le.name)) = LOWER(TRIM(?)) AND le.weight_unit IN ('kg','lbs')
+       ORDER BY wl.started_at DESC LIMIT 1`,
+      [name]
+    );
+    const weightUnit = resolveExerciseUnit(prev?.weight_unit, fallbackUnit);
+    const res = await db.runAsync(
+      "INSERT INTO logged_exercises (workout_log_id, name, is_bodyweight, position, weight_unit) VALUES (?, ?, ?, ?, ?)",
+      [logId, name, newExerciseBW ? 1 : 0, nextPos, weightUnit]
+    );
     const newId = res.lastInsertRowId;
     await db.runAsync("INSERT INTO logged_sets (logged_exercise_id, set_number, weight_kg, reps, is_confirmed, completed_at) VALUES (?, ?, ?, ?, 1, ?)", [newId, 1, null, null, Date.now()]);
     setNewExerciseName("");
@@ -129,6 +140,13 @@ export function LogDetailScreen() {
 
   const toggleShowWeight = (exerciseId: number) => {
     setShowWeightForBW((prev) => ({ ...prev, [exerciseId]: !prev[exerciseId] }));
+  };
+
+  const handleToggleUnit = async (exerciseId: number, current: Unit) => {
+    const next = toggleUnit(current);
+    const db = await getDatabase();
+    await db.runAsync("UPDATE logged_exercises SET weight_unit = ? WHERE id = ?", [next, exerciseId]);
+    await load();
   };
 
   const handleDeleteWorkout = () => {
@@ -169,15 +187,15 @@ export function LogDetailScreen() {
     );
   }
 
-  const step = weightStep(unit);
-
   return (
-    <Screen scrollEnabled={!scrollLocked}>
+    <Screen scrollEnabled={!scrollLocked} scrollToEndKey={showAddExercise}>
       <Text style={{ color: theme.colors.textPrimary, fontSize: theme.typography.heading.fontSize, fontWeight: theme.typography.heading.fontWeight } as TextStyle}>{log.day_name_snapshot}</Text>
       <Text style={{ color: theme.colors.textSecondary, fontSize: theme.typography.caption.fontSize } as TextStyle}>{new Date(log.started_at).toLocaleDateString()}</Text>
 
       {exercises.map(({ exercise, sets }) => {
         const showWeight = exercise.is_bodyweight ? !!showWeightForBW[exercise.id] : true;
+        const unit = resolveExerciseUnit(exercise.weight_unit, fallbackUnit);
+        const step = weightStep(unit);
         return (
           <Card key={exercise.id} style={{ gap: 12 }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
@@ -217,12 +235,13 @@ export function LogDetailScreen() {
                   confirmed
                   showConfirm={false}
                   weightStep={step}
-                  onWeightChange={(v) => handleWeightChange(s.id, v)}
-                  onWeightStep={(delta) => handleWeightStepper(s, delta)}
+                  onWeightChange={(v) => handleWeightChange(s.id, v, unit)}
+                  onWeightStep={(delta) => handleWeightStepper(s, delta, unit)}
                   onRepsChange={(v) => handleRepsChange(s.id, v)}
                   onRepsStep={(delta) => handleRepsStepper(s, delta)}
                   onDelete={() => handleDeleteSet(s.id)}
                   onToggleExtraWeight={() => toggleShowWeight(exercise.id)}
+                  onUnitPress={() => handleToggleUnit(exercise.id, unit)}
                   onLockScroll={lockScroll}
                 />
               );

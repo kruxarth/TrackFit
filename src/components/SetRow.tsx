@@ -22,11 +22,12 @@ type Props = {
   onConfirm?: () => void;
   onDelete: () => void;
   onToggleExtraWeight?: () => void;
+  onUnitPress?: () => void;
   onLockScroll?: (locked: boolean) => void;
   weightStep: number;
 };
 
-export function SetRow({
+function SetRowInner({
   setNumber,
   unit,
   displayWeight,
@@ -43,6 +44,7 @@ export function SetRow({
   onConfirm,
   onDelete,
   onToggleExtraWeight,
+  onUnitPress,
   onLockScroll,
   weightStep,
 }: Props) {
@@ -81,6 +83,7 @@ export function SetRow({
             onIncrement={() => onWeightStep(weightStep)}
             onDecrement={() => onWeightStep(-weightStep)}
             unit={unit}
+            onUnitPress={onUnitPress}
             placeholder="0"
             decimal
             accessibilityLabel={isBodyweight ? "Extra weight" : "Weight"}
@@ -119,3 +122,5 @@ export function SetRow({
     </View>
   );
 }
+
+export const SetRow = React.memo(SetRowInner);

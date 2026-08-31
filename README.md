@@ -12,7 +12,7 @@ Most workout apps want an account, a feed, an AI coach, and a reason to open the
   <img src="assets/show2.jpeg" alt="Train: day list" width="220" />
   <img src="assets/show1.jpeg" alt="Edit a day: exercises, sets, bodyweight" width="220" />
   <img src="assets/show4.jpeg" alt="Progress: body weight and BMI" width="220" />
-  <img src="assets/show3.jpeg" alt="Settings: rest timer, steps, export and backup" width="220" />
+  <img src="assets/show3.jpeg" alt="Settings: rest timer, export and backup" width="220" />
 </p>
 
 ## Features
@@ -23,6 +23,7 @@ Most workout apps want an account, a feed, an AI coach, and a reason to open the
 - **Sets and bodyweight.** Pick how many sets each movement should have. Mark an exercise as bodyweight and add extra kg when you need it (weighted dips, etc.).
 - **Start a workout.** Opening a day clones it into today’s log. Changing the template later does not rewrite past sessions.
 - **Carry-forward.** Weight and reps come in from the last time you logged that exercise, so you are not typing 80 × 5 from scratch. Confirm each set when you actually do it.
+- **Per-exercise units.** Tap the lbs/kg label next to a weight to switch that exercise only. Other movements in the same workout keep their units.
 - **Rest between sets.** After you mark a set done, a countdown runs. On by default; turn it off or change the length in Settings.
 - **History.** Past workouts stay in a log you can open again.
 
@@ -30,13 +31,12 @@ Most workout apps want an account, a feed, an AI coach, and a reason to open the
 
 - **Exercise charts.** Search an exercise you have logged. See max weight over 1 month, 3 months, 6 months, 1 year, or all time.
 - **Body.** Log body weight, store height, and get BMI plus a weight trend.
-- **Step counting.** Optional. Your phone already counts steps; TrackFit reads that when the app is open (including steps taken while you were away) and shows today plus the last seven days. Off until you turn it on. Needs the phone’s physical-activity permission on Android.
 
 ### Settings and data
 
-- **kg or lbs.** Stored as kg under the hood; the display unit is yours.
+- **kg or lbs.** Stored as kg under the hood. Settings sets the default; each logged exercise can use its own unit.
 - **Appearance.** System, light, or dark.
-- **CSV export.** Workouts, body metrics, and steps, shared through the system share sheet.
+- **CSV export.** Workouts, body metrics, and any previously recorded steps, shared through the system share sheet.
 - **JSON backup and restore.** Full dump of local data so you can move phones. Restore replaces everything currently on the device.
 
 ## Why this instead of Strong / Hevy / the rest

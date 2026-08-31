@@ -11,6 +11,7 @@ type Props = {
   onIncrement: () => void;
   onDecrement: () => void;
   unit?: string;
+  onUnitPress?: () => void;
   placeholder?: string;
   accessibilityLabel?: string;
   decimal?: boolean;
@@ -24,6 +25,7 @@ export function QuantityControl({
   onIncrement,
   onDecrement,
   unit,
+  onUnitPress,
   placeholder,
   accessibilityLabel,
   decimal = false,
@@ -33,14 +35,12 @@ export function QuantityControl({
   const { colors, radii } = theme;
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const focusedRef = useRef(false);
 
   const lock = useCallback(() => {
     onLockScroll?.(true);
   }, [onLockScroll]);
 
   const unlock = useCallback(() => {
-    if (focusedRef.current) return;
     onLockScroll?.(false);
   }, [onLockScroll]);
 
@@ -86,12 +86,7 @@ export function QuantityControl({
   return (
     <View style={{ gap: 6 }} accessibilityLabel={accessibilityLabel} collapsable={false}>
       <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: "600" } as TextStyle}>{label}</Text>
-      <View
-        style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
-        onTouchStart={lock}
-        onTouchEnd={clearTimers}
-        onTouchCancel={clearTimers}
-      >
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
         <Pressable
           onPress={() => {
             onDecrement();
@@ -113,14 +108,6 @@ export function QuantityControl({
           fill
           decimal={decimal}
           accessibilityLabel={label}
-          onFocus={() => {
-            focusedRef.current = true;
-            lock();
-          }}
-          onBlur={() => {
-            focusedRef.current = false;
-            onLockScroll?.(false);
-          }}
         />
         <Pressable
           onPress={() => {
@@ -137,7 +124,30 @@ export function QuantityControl({
           <Text style={{ color: colors.textPrimary, fontSize: 22, fontWeight: "600" } as TextStyle}>+</Text>
         </Pressable>
         {unit ? (
-          <Text style={{ color: colors.textSecondary, fontSize: 14, fontWeight: "600", minWidth: 28 } as TextStyle}>{unit}</Text>
+          onUnitPress ? (
+            <Pressable
+              onPress={onUnitPress}
+              accessibilityRole="button"
+              accessibilityLabel={`Weight unit ${unit}. Tap to switch between lbs and kg`}
+              hitSlop={8}
+              style={({ pressed }) => ({
+                minWidth: 40,
+                minHeight: 44,
+                paddingHorizontal: 8,
+                borderRadius: radii.pill,
+                borderCurve: "continuous" as const,
+                alignItems: "center" as const,
+                justifyContent: "center" as const,
+                backgroundColor: pressed ? colors.border : colors.surfaceRaised,
+                borderWidth: StyleSheet.hairlineWidth,
+                borderColor: colors.border,
+              })}
+            >
+              <Text style={{ color: colors.accent, fontSize: 14, fontWeight: "700" } as TextStyle}>{unit}</Text>
+            </Pressable>
+          ) : (
+            <Text style={{ color: colors.textSecondary, fontSize: 14, fontWeight: "600", minWidth: 28 } as TextStyle}>{unit}</Text>
+          )
         ) : null}
       </View>
     </View>

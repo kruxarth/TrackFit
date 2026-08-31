@@ -20,17 +20,12 @@
       "backgroundColor": "#0E1113"
     },
     "ios": {
-      "supportsTablet": true,
-      "infoPlist": {
-        "NSMotionUsageDescription": "TrackFit uses motion data to count your steps throughout the day."
-      }
+      "supportsTablet": true
     },
     "android": {
       "package": "com.trackfit.app",
       "versionCode": 1,
-      "permissions": [
-        "android.permission.ACTIVITY_RECOGNITION"
-      ],
+      "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
         "backgroundColor": "#0E1113",
         "foregroundImage": "./assets/fitractlogo.png"

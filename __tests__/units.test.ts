@@ -1,4 +1,4 @@
-import { kgToDisplay, displayToKg, formatWeight, weightStep, KG_PER_LB } from "../src/utils/units";
+import { kgToDisplay, displayToKg, formatWeight, weightStep, KG_PER_LB, toggleUnit, resolveExerciseUnit } from "../src/utils/units";
 
 describe("units", () => {
   it("formatWeight 60 kg in lbs is 132.3", () => {
@@ -31,6 +31,19 @@ describe("units", () => {
   it("weightStep returns correct step", () => {
     expect(weightStep("kg")).toBe(2.5);
     expect(weightStep("lbs")).toBe(5);
+  });
+
+  it("toggleUnit flips kg and lbs", () => {
+    expect(toggleUnit("kg")).toBe("lbs");
+    expect(toggleUnit("lbs")).toBe("kg");
+  });
+
+  it("resolveExerciseUnit prefers stored per-exercise unit", () => {
+    expect(resolveExerciseUnit("lbs", "kg")).toBe("lbs");
+    expect(resolveExerciseUnit("kg", "lbs")).toBe("kg");
+    expect(resolveExerciseUnit(null, "lbs")).toBe("lbs");
+    expect(resolveExerciseUnit(undefined, "kg")).toBe("kg");
+    expect(resolveExerciseUnit("stone", "kg")).toBe("kg");
   });
 
   it("round-trip lbs with multiple values within 1e-9", () => {

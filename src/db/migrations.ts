@@ -74,4 +74,8 @@ CREATE TABLE settings (
 );
 `,
   },
+  {
+    version: 2,
+    sql: `ALTER TABLE logged_exercises ADD COLUMN weight_unit TEXT;`,
+  },
 ];

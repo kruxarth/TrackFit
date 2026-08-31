@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { View, Text, Switch, Alert, TextStyle } from "react-native";
 import Constants from "expo-constants";
 import { Screen } from "../../components/Screen";
@@ -8,7 +8,6 @@ import { SegmentedControl } from "../../components/SegmentedControl";
 import { Stepper } from "../../components/Stepper";
 import { useTheme } from "../../theme/ThemeContext";
 import { useSettingsStore, type ThemePreference } from "../../stores/settingsStore";
-import * as pedometer from "../../services/pedometer";
 import * as csvExport from "../../services/csvExport";
 import * as backup from "../../services/backup";
 
@@ -20,45 +19,13 @@ export function SettingsScreen() {
   const setRestEnabled = useSettingsStore((s) => s.setRestTimerEnabled);
   const restSeconds = useSettingsStore((s) => s.restTimerSeconds);
   const setRestSeconds = useSettingsStore((s) => s.setRestTimerSeconds);
-  const stepsEnabled = useSettingsStore((s) => s.stepsEnabled);
-  const setStepsEnabled = useSettingsStore((s) => s.setStepsEnabled);
   const themePreference = useSettingsStore((s) => s.themePreference);
   const setThemePreference = useSettingsStore((s) => s.setThemePreference);
-  const [stepsError, setStepsError] = useState<string | null>(null);
-  const [stepsNeedsSettings, setStepsNeedsSettings] = useState(false);
 
   const themeLabel = themePreference === "light" ? "Light" : themePreference === "dark" ? "Dark" : "System";
   const handleThemeChange = (label: "System" | "Light" | "Dark") => {
     const next: ThemePreference = label === "Light" ? "light" : label === "Dark" ? "dark" : "system";
     void setThemePreference(next);
-  };
-
-  const handleStepsToggle = async (value: boolean) => {
-    if (value) {
-      const result = await pedometer.enableSteps();
-      if (result.granted) {
-        await setStepsEnabled(true);
-        setStepsError(null);
-        setStepsNeedsSettings(false);
-      } else {
-        await setStepsEnabled(false);
-        setStepsError(result.message ?? "Permission denied");
-        setStepsNeedsSettings(!!result.needsSettings);
-        if (result.needsSettings) {
-          Alert.alert("Need phone settings", result.message ?? "Permission denied", [
-            { text: "Not now", style: "cancel" },
-            { text: "Open settings", onPress: () => pedometer.openSystemSettings() },
-          ]);
-        } else {
-          Alert.alert("Step tracking", result.message ?? "Permission denied");
-        }
-      }
-    } else {
-      pedometer.disableSteps();
-      await setStepsEnabled(false);
-      setStepsError(null);
-      setStepsNeedsSettings(false);
-    }
   };
 
   const handleExportCsv = async () => {
@@ -137,28 +104,6 @@ export function SettingsScreen() {
             />
             <Text style={{ color: theme.colors.textSecondary, fontVariant: ["tabular-nums"] as TextStyle["fontVariant"] } as TextStyle}>{restSeconds}s</Text>
           </View>
-        ) : null}
-      </Card>
-
-      <Card style={{ gap: 12 }}>
-        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-          <Text style={{ color: theme.colors.textPrimary, fontSize: theme.typography.heading.fontSize, fontWeight: "600" } as TextStyle}>Step tracking</Text>
-          <Switch
-            value={stepsEnabled}
-            onValueChange={handleStepsToggle}
-            trackColor={{ true: theme.colors.accent, false: theme.colors.border }}
-            thumbColor={theme.colors.surface}
-            accessibilityLabel="Enable step tracking"
-          />
-        </View>
-        <Text style={{ color: theme.colors.textSecondary, fontSize: 12 } as TextStyle}>
-          Your phone counts steps all day. TrackFit syncs them when the app is open. In Expo Go on Android this cannot be turned on — Physical activity is not a permission Expo Go ships with.
-        </Text>
-        {stepsError ? (
-          <>
-            <Text style={{ color: theme.colors.danger, fontSize: 12 } as TextStyle}>{stepsError}</Text>
-            {stepsNeedsSettings ? <Button title="Open system settings" variant="secondary" size="sm" onPress={() => pedometer.openSystemSettings()} /> : null}
-          </>
         ) : null}
       </Card>
 

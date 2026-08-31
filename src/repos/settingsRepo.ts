@@ -57,11 +57,6 @@ export async function getRestTimerSeconds(): Promise<number> {
   return v ? parseInt(v, 10) : 90;
 }
 
-export async function getStepsEnabled(): Promise<boolean> {
-  const v = await getSetting("steps_enabled");
-  return v === "1";
-}
-
 export async function getHeightCm(): Promise<number | null> {
   const v = await getSetting("height_cm");
   if (!v) return null;

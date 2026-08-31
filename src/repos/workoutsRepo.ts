@@ -16,6 +16,7 @@ export type LoggedExerciseRow = {
   is_bodyweight: number;
   notes: string | null;
   position: number;
+  weight_unit: string | null;
 };
 
 export type LoggedSetRow = {
@@ -99,7 +100,8 @@ export async function createLoggedExercise(
   name: string,
   isBodyweight = 0,
   position?: number,
-  notes: string | null = null
+  notes: string | null = null,
+  weightUnit: string | null = null
 ): Promise<LoggedExerciseRow> {
   const db = await getDatabase();
   let pos = position;
@@ -109,8 +111,8 @@ export async function createLoggedExercise(
     pos = maxPos + 1;
   }
   const res = await db.runAsync(
-    "INSERT INTO logged_exercises (workout_log_id, name, is_bodyweight, notes, position) VALUES (?, ?, ?, ?, ?)",
-    [workoutLogId, name.trim(), isBodyweight ? 1 : 0, notes, pos]
+    "INSERT INTO logged_exercises (workout_log_id, name, is_bodyweight, notes, position, weight_unit) VALUES (?, ?, ?, ?, ?, ?)",
+    [workoutLogId, name.trim(), isBodyweight ? 1 : 0, notes, pos, weightUnit]
   );
   const id = res.lastInsertRowId;
   const row = await db.getFirstAsync<LoggedExerciseRow>("SELECT * FROM logged_exercises WHERE id = ?", [id]);
@@ -131,6 +133,11 @@ export async function updateLoggedExerciseName(id: number, name: string): Promis
 export async function updateLoggedExerciseBodyweight(id: number, isBodyweight: number): Promise<void> {
   const db = await getDatabase();
   await db.runAsync("UPDATE logged_exercises SET is_bodyweight = ? WHERE id = ?", [isBodyweight ? 1 : 0, id]);
+}
+
+export async function updateLoggedExerciseWeightUnit(id: number, unit: "kg" | "lbs"): Promise<void> {
+  const db = await getDatabase();
+  await db.runAsync("UPDATE logged_exercises SET weight_unit = ? WHERE id = ?", [unit, id]);
 }
 
 export async function deleteLoggedExercise(id: number): Promise<void> {

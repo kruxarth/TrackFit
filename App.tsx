@@ -6,7 +6,6 @@ import { getDatabase } from "./src/db/database";
 import { useSettingsStore } from "./src/stores/settingsStore";
 import { useWorkoutStore } from "./src/stores/workoutStore";
 import { RootNavigator } from "./src/navigation/RootNavigator";
-import * as pedometer from "./src/services/pedometer";
 
 function AppGate() {
   const theme = useTheme();
@@ -14,7 +13,6 @@ function AppGate() {
   const hydratedSettings = useSettingsStore((s) => s.hydrated);
   const hydrateWorkout = useWorkoutStore((s) => s.hydrate);
   const hydratedWorkout = useWorkoutStore((s) => s.hydrated);
-  const stepsEnabled = useSettingsStore((s) => s.stepsEnabled);
   const [dbReady, setDbReady] = useState(false);
 
   useEffect(() => {
@@ -39,15 +37,6 @@ function AppGate() {
       cancelled = true;
     };
   }, [hydrateSettings, hydrateWorkout]);
-
-  useEffect(() => {
-    if (!dbReady || !hydratedSettings) return;
-    if (stepsEnabled) {
-      void pedometer.startWatching().catch(() => {});
-    } else {
-      pedometer.stopWatching();
-    }
-  }, [dbReady, hydratedSettings, stepsEnabled]);
 
   if (!dbReady || !hydratedSettings || !hydratedWorkout) {
     return <View style={{ flex: 1, backgroundColor: theme.colors.bg }} />;

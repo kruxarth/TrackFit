@@ -1,5 +1,7 @@
 import { getDatabase } from "../db/database";
 import type { DayExerciseRow } from "../repos/daysRepo";
+import { getUnit } from "../repos/settingsRepo";
+import { resolveExerciseUnit } from "../utils/units";
 
 export async function startWorkout(dayId: number): Promise<number> {
   const db = await getDatabase();
@@ -15,6 +17,7 @@ export async function startWorkout(dayId: number): Promise<number> {
   if (!day) throw new Error("Day not found");
 
   const dayExercises = await db.getAllAsync<DayExerciseRow>("SELECT * FROM day_exercises WHERE day_id = ? ORDER BY position ASC, id ASC", [dayId]);
+  const fallbackUnit = await getUnit();
 
   let newLogId = -1;
 
@@ -29,20 +32,21 @@ export async function startWorkout(dayId: number): Promise<number> {
     newLogId = res.lastInsertRowId;
 
     for (const ex of dayExercises) {
-      const loggedExRes = await db.runAsync(
-        "INSERT INTO logged_exercises (workout_log_id, name, is_bodyweight, position) VALUES (?, ?, ?, ?)",
-        [newLogId, ex.name, ex.is_bodyweight ? 1 : 0, ex.position]
-      );
-      const loggedExId = loggedExRes.lastInsertRowId;
-
       // Carry-forward per exercise: find most recent completed log containing same name (LOWER(TRIM) equality)
-      const prevExercise = await db.getFirstAsync<{ id: number }>(
-        `SELECT le.id FROM logged_exercises le
+      const prevExercise = await db.getFirstAsync<{ id: number; weight_unit: string | null }>(
+        `SELECT le.id, le.weight_unit FROM logged_exercises le
          JOIN workout_logs wl ON le.workout_log_id = wl.id
          WHERE wl.status = 'completed' AND LOWER(TRIM(le.name)) = LOWER(TRIM(?))
          ORDER BY wl.started_at DESC LIMIT 1`,
         [ex.name]
       );
+      const weightUnit = resolveExerciseUnit(prevExercise?.weight_unit, fallbackUnit);
+
+      const loggedExRes = await db.runAsync(
+        "INSERT INTO logged_exercises (workout_log_id, name, is_bodyweight, position, weight_unit) VALUES (?, ?, ?, ?, ?)",
+        [newLogId, ex.name, ex.is_bodyweight ? 1 : 0, ex.position, weightUnit]
+      );
+      const loggedExId = loggedExRes.lastInsertRowId;
 
       if (prevExercise) {
         const prevSets = await db.getAllAsync<{ weight_kg: number | null; reps: number | null; set_number: number }>(

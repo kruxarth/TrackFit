@@ -118,11 +118,12 @@ export const useWorkoutStore = create<WorkoutState>((set, get) => ({
     const db = await getDatabase();
     const maxRow = await db.getFirstAsync<{ maxPos: number | null }>("SELECT MAX(position) as maxPos FROM logged_exercises WHERE workout_log_id = ?", [logId]);
     const nextPos = (maxRow?.maxPos ?? -1) + 1;
-    const res = await db.runAsync("INSERT INTO logged_exercises (workout_log_id, name, is_bodyweight, position) VALUES (?, ?, ?, ?)", [
+    const res = await db.runAsync("INSERT INTO logged_exercises (workout_log_id, name, is_bodyweight, position, weight_unit) VALUES (?, ?, ?, ?, ?)", [
       logId,
       name.trim(),
       isBodyweight ? 1 : 0,
       nextPos,
+      null,
     ]);
     const newExId = res.lastInsertRowId;
     await db.runAsync("INSERT INTO logged_sets (logged_exercise_id, set_number, weight_kg, reps, is_confirmed) VALUES (?, ?, ?, ?, 0)", [newExId, 1, null, null]);
