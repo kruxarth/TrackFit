@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import { View, Text, Switch, Alert, TextStyle } from "react-native";
 import Constants from "expo-constants";
+import { useUpdates } from "expo-updates";
 import { Screen } from "../../components/Screen";
 import { Card } from "../../components/Card";
 import { Button } from "../../components/Button";
@@ -10,9 +11,12 @@ import { useTheme } from "../../theme/ThemeContext";
 import { useSettingsStore, type ThemePreference } from "../../stores/settingsStore";
 import * as csvExport from "../../services/csvExport";
 import * as backup from "../../services/backup";
+import { applyAppUpdate, prepareAppUpdate } from "../../services/appUpdates";
 
 export function SettingsScreen() {
   const theme = useTheme();
+  const { isUpdatePending } = useUpdates();
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
   const unit = useSettingsStore((s) => s.unit);
   const setUnit = useSettingsStore((s) => s.setUnit);
   const restEnabled = useSettingsStore((s) => s.restTimerEnabled);
@@ -43,6 +47,42 @@ export function SettingsScreen() {
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       Alert.alert("Backup failed", msg);
+    }
+  };
+
+  const promptRestart = () => {
+    Alert.alert("Update ready", "Restart now to apply it. Workout data already saved on this phone is kept.", [
+      { text: "Later", style: "cancel" },
+      {
+        text: "Restart",
+        onPress: () => {
+          void applyAppUpdate().catch((e) => {
+            const msg = e instanceof Error ? e.message : String(e);
+            Alert.alert("Restart failed", msg);
+          });
+        },
+      },
+    ]);
+  };
+
+  const handleCheckUpdate = async () => {
+    setCheckingUpdate(true);
+    try {
+      const result = await prepareAppUpdate(isUpdatePending);
+      if (result.status === "disabled") {
+        Alert.alert("Updates unavailable", "This only works in the installed APK, not in Expo Go or a dev client.");
+        return;
+      }
+      if (result.status === "up-to-date") {
+        Alert.alert("Up to date", "You're already on the latest version.");
+        return;
+      }
+      promptRestart();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      Alert.alert("Update check failed", msg);
+    } finally {
+      setCheckingUpdate(false);
     }
   };
 
@@ -119,6 +159,17 @@ export function SettingsScreen() {
         <Text style={{ color: theme.colors.textSecondary, fontSize: theme.typography.caption.fontSize } as TextStyle}>TrackFit v{Constants.expoConfig?.version ?? "0.0.1"}</Text>
         <Text style={{ color: theme.colors.textSecondary, fontSize: theme.typography.caption.fontSize } as TextStyle}>MIT License — Copyright (c) 2026 TrackFit contributors</Text>
         <Text style={{ color: theme.colors.textSecondary, fontSize: theme.typography.caption.fontSize } as TextStyle}>Fully offline, no accounts, no tracking. Open source.</Text>
+        <Text style={{ color: theme.colors.textSecondary, fontSize: 13 } as TextStyle}>
+          Check for a JS update without reinstalling the APK. Restart when one is ready.
+        </Text>
+        <Button
+          title={checkingUpdate ? "Checking…" : "Check for updates"}
+          variant="secondary"
+          onPress={() => {
+            void handleCheckUpdate();
+          }}
+          disabled={checkingUpdate}
+        />
       </Card>
     </Screen>
   );
