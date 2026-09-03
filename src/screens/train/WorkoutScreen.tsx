@@ -402,10 +402,7 @@ export function WorkoutScreen() {
   const handleRestSkip = () => setRestTimerEndsAt(null);
   const handleRestDone = () => setRestTimerEndsAt(null);
 
-  const contentPaddingBottom = useMemo(
-    () => 120 + (showAddExercise ? keyboardHeight : 0),
-    [showAddExercise, keyboardHeight]
-  );
+  const contentPaddingBottom = useMemo(() => 120, []);
 
   if (!log) {
     return (
@@ -427,7 +424,7 @@ export function WorkoutScreen() {
         </View>
       </View>
 
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"} keyboardVerticalOffset={0}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined} keyboardVerticalOffset={0}>
         <ScrollView
           ref={scrollRef}
           style={{ flex: 1 }}

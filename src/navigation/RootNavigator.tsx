@@ -79,6 +79,7 @@ export function RootNavigator() {
           tabBarActiveTintColor: theme.colors.accent,
           tabBarInactiveTintColor: theme.colors.textSecondary,
           tabBarStyle: { backgroundColor: theme.colors.surface, borderTopColor: theme.colors.border },
+          tabBarHideOnKeyboard: true,
           headerStyle: { backgroundColor: theme.colors.bg },
           headerTintColor: theme.colors.textPrimary,
           headerShadowVisible: false,

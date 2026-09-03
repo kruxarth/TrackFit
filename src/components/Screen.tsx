@@ -52,12 +52,12 @@ export function Screen({ children, scroll = true, scrollEnabled = true, scrollTo
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={["top", "bottom"]}>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"} keyboardVerticalOffset={0}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined} keyboardVerticalOffset={0}>
         {scroll ? (
           <ScrollView
             ref={scrollRef}
             style={{ flex: 1, backgroundColor: colors.bg }}
-            contentContainerStyle={{ flexGrow: 1, paddingBottom: scrollToEndKey ? keyboardHeight : 0 }}
+            contentContainerStyle={{ flexGrow: 1 }}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
             automaticallyAdjustKeyboardInsets
